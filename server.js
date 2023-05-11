@@ -18,17 +18,22 @@ const db = mysql.createConnection(
   db.connect(function (err) {
     if (err) throw err;
   console.log('Connected to the employee_db database.');
-  console.log('Employee Tracker');
+  console.log('')
+  console.log("######   ##   ##  #####    ##        ####    ##  ##   ######   ######")
+  console.log("##       #######  ##  ##   ##       ##  ##   ##  ##   ##       ##    ")  
+  console.log("#####    ## # ##  #####    ##       ##  ##    ####    #####    ##### ")  
+  console.log("##       ## # ##  ##       ##       ##  ##     ##     ##       ##    ")  
+  console.log("######   ## # ##  ##       ######    ####      ##     ######   ######")  
+  console.log("")                                                                                                                                                                                                        
+  console.log("######   #####     ####     ####    ##  ##   ######   #####   ")
+  console.log("  ##     ##  ##   ##  ##   ##  ##   ## ##    ##       ##  ##  ")
+  console.log("  ##     #####    ######   ##       ####     #####    #####   ")
+  console.log("  ##     ##  ##   ##  ##   ##  ##   ## ##    ##       ##  ##  ")
+  console.log("  ##     ##  ##   ##  ##    ####    ##  ##   ######   ##  ##  ")
+  console.log("");
   promptUser();
   }
 );
-
-
-
-// Query database
-// db.query('SELECT * FROM employee', function (err, results) {
-//   console.log(results);
-// });
 
 // Prompt User for Choices
 const promptUser = () => {
@@ -82,48 +87,60 @@ const promptUser = () => {
   });
 };
 
+//DONE
 function viewAllEmployees() {
     let sql = 'SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.name AS department, CONCAT (manager.first_name, " ", manager.last_name) AS manager FROM employee  JOIN role ON employee.role_id = role.id JOIN department ON department.id = role.department_id LEFT JOIN employee manager ON employee.manager_id = manager.id';
     db.query(sql, (err, result) => {
       if (err) throw err;
       // Inform the client
     console.table('\n', result);
-    console.log('See all employees above - Press an arrow key for options list');
-    });
+    console.log('');
     promptUser();
+    });
   };
 
+  //DONE
   function viewAllDepartments() {
-    let sql = 'SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.name AS department, CONCAT (manager.first_name, " ", manager.last_name) AS manager FROM employee  JOIN role ON employee.role_id = role.id JOIN department ON department.id = role.department_id LEFT JOIN employee manager ON employee.manager_id = manager.id';
+    let sql = 'SELECT department.id, department.name AS department FROM department';
     db.query(sql, (err, result) => {
       if (err) throw err;
       // Inform the client
     console.table('\n', result);
-    console.log('See all departments above - Press an arrow key for options list');
-    });
+    console.log('');
     promptUser();
+    });
   };
 
+  //DONE
   function viewAllRoles() {
-    let sql = 'SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.name AS department, CONCAT (manager.first_name, " ", manager.last_name) AS manager FROM employee  JOIN role ON employee.role_id = role.id JOIN department ON department.id = role.department_id LEFT JOIN employee manager ON employee.manager_id = manager.id';
+    let sql = 'SELECT role.id, role.title, role.department_id, role.salary, department.name AS department FROM role JOIN department ON role.department_id = department.id';
     db.query(sql, (err, result) => {
       if (err) throw err;
       // Inform the client
     console.table('\n', result);
-    console.log('See all roles above - Press an arrow key for options list');
-    });
+    console.log('');
     promptUser();
-  };
-
+    });
+  };/////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//DONE
   function addDepartment() {
-    let sql = 'SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.name AS department, CONCAT (manager.first_name, " ", manager.last_name) AS manager FROM employee  JOIN role ON employee.role_id = role.id JOIN department ON department.id = role.department_id LEFT JOIN employee manager ON employee.manager_id = manager.id';
-    db.query(sql, (err, result) => {
-      if (err) throw err;
-      // Inform the client
-    console.table('\n', result);
-    console.log('Department Added - Press an arrow key for options list');
+    inquirer.prompt([
+      {
+        name: 'addDepartment',
+        type: 'input',
+        message: 'Please enter a department name:'
+      }
+    ]).then(answer => {
+      let sql = `INSERT INTO department (name) VALUES (?)`;
+      db.query(sql, answer.addDepartment, (err, res) => {
+        if (err) throw err;
+    // //   // Inform the client
+    console.log('');
+    console.log('Added ' + answer.addDepartment + ' to departments!');
+    viewAllDepartments();
     });
-    promptUser();
+  });
   };
 
   function addRole() {
