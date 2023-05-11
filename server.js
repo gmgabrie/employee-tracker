@@ -51,6 +51,8 @@ const promptUser = () => {
           'Add a Role',
           'Add an Employee',
           'Update an Employee Role',
+          'View Employees by Department',
+          'View Employees by Manager',
           'Exit'
           ]
       }
@@ -80,6 +82,12 @@ const promptUser = () => {
         }
         if (choices === 'Update an Employee Role') {
           updateEmployeeRole();
+        }
+        if (choices === 'View Employees by Department') {
+          viewEmpByDept();
+        }
+        if (choices === 'View Employees by Manager') {
+          viewEmpByMgr();
         }
         if (choices === 'Exit') {
             db.end();
@@ -144,14 +152,22 @@ function viewAllEmployees() {
   };
 
   function addRole() {
-    let sql = 'SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.name AS department, CONCAT (manager.first_name, " ", manager.last_name) AS manager FROM employee  JOIN role ON employee.role_id = role.id JOIN department ON department.id = role.department_id LEFT JOIN employee manager ON employee.manager_id = manager.id';
-    db.query(sql, (err, result) => {
-      if (err) throw err;
-      // Inform the client
-    console.table('\n', result);
-    console.log('Role Added - Press an arrow key for options list');
+    inquirer.prompt([
+      {
+        name: 'addRole',
+        type: 'input',
+        message: 'Please enter a role name:'
+      }
+    ]).then(answer => {
+      let sql = `INSERT INTO department (name) VALUES (?)`;
+      db.query(sql, answer.addDepartment, (err, res) => {
+        if (err) throw err;
+    // //   // Inform the client
+    console.log('');
+    console.log('Added ' + answer.addDepartment + ' to departments!');
+    viewAllDepartments();
     });
-    promptUser();
+  });
   };
 
   function addEmployee() {
@@ -174,4 +190,49 @@ function viewAllEmployees() {
     console.log('Employee Role Updated - Press an arrow key for options list');
     });
     promptUser();
+  };
+
+  // DONE
+  function viewEmpByDept() {
+    db.query(`SELECT id, name FROM department ORDER BY id ASC;`, (err, res) => {
+      if (err) throw err;
+      let departments = res.map(department => ({name: department.name , value: department.id }));
+      inquirer.prompt([
+          {
+          name: 'department',
+          type: 'rawlist',
+          message: 'Which department would you like to see the employee\'s of?',
+          choices: departments   
+          },
+      ]).then((response) => {
+          db.query(`SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary FROM employee JOIN role ON employee.role_id = role.id JOIN department ON department.id = role.department_id WHERE department.id = ${response.department} ORDER BY employee.id ASC`, 
+          (err, res) => {
+              if (err) throw err;
+              console.table('\n', res, '\n');
+              promptUser();
+          })
+      })
+  })
+  };
+
+  function viewEmpByMgr() {
+    db.query(`SELECT id, first_name, last_name FROM employee ORDER BY id ASC;`, (err, res) => {
+      if (err) throw err;
+      let managers = res.map(employee => ({name: employee.first_name + ' ' + employee.last_name, value: employee.id }));
+      inquirer.prompt([
+          {
+          name: 'manager',
+          type: 'rawlist',
+          message: 'Which manager would you like to see the employee\'s of?',
+          choices: managers   
+          },
+      ]).then((response) => {
+          db.query(`SELECT e.id, e.first_name, e.last_name, role.title, department.name, role.salary, CONCAT(m.first_name, ' ', m.last_name) manager FROM employee m RIGHT JOIN employee e ON e.manager_id = m.id JOIN role ON e.role_id = role.id JOIN department ON department.id = role.department_id WHERE e.manager_id = ${response.manager} ORDER BY e.id ASC`, 
+          (err, res) => {
+              if (err) throw err;
+              console.table('\n', res, '\n');
+              promptUser();
+          })
+      })
+  })
   };
