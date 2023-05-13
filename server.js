@@ -1,6 +1,7 @@
 // Import and require mysql2
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
+const chalk = require('chalk');
 require('console.table');
 
 
@@ -17,19 +18,19 @@ const db = mysql.createConnection(
 
   db.connect(function (err) {
     if (err) throw err;
-  console.log('Connected to the employee_db database.');
+  console.log(chalk.cyan('Connected to the employee_db database.'));
   console.log('')
-  console.log("######   ##   ##  #####    ##        ####    ##  ##   ######   ######")
-  console.log("##       #######  ##  ##   ##       ##  ##   ##  ##   ##       ##    ")  
-  console.log("#####    ## # ##  #####    ##       ##  ##    ####    #####    ##### ")  
-  console.log("##       ## # ##  ##       ##       ##  ##     ##     ##       ##    ")  
-  console.log("######   ## # ##  ##       ######    ####      ##     ######   ######")  
+  console.log(chalk.cyan("######   ##   ##  #####    ##        ####    ##  ##   ######   ######"))
+  console.log(chalk.cyan("##       #######  ##  ##   ##       ##  ##   ##  ##   ##       ##    ")) 
+  console.log(chalk.cyan("#####    ## # ##  #####    ##       ##  ##    ####    #####    ##### ")) 
+  console.log(chalk.cyan("##       ## # ##  ##       ##       ##  ##     ##     ##       ##    ")) 
+  console.log(chalk.cyan("######   ## # ##  ##       ######    ####      ##     ######   ######"))  
   console.log("")                                                                                                                                                                                                        
-  console.log("######   #####     ####     ####    ##  ##   ######   #####   ")
-  console.log("  ##     ##  ##   ##  ##   ##  ##   ## ##    ##       ##  ##  ")
-  console.log("  ##     #####    ######   ##       ####     #####    #####   ")
-  console.log("  ##     ##  ##   ##  ##   ##  ##   ## ##    ##       ##  ##  ")
-  console.log("  ##     ##  ##   ##  ##    ####    ##  ##   ######   ##  ##  ")
+  console.log(chalk.cyan("######   #####     ####     ####    ##  ##   ######   #####   "))
+  console.log(chalk.cyan("  ##     ##  ##   ##  ##   ##  ##   ## ##    ##       ##  ##  "))
+  console.log(chalk.cyan("  ##     #####    ######   ##       ####     #####    #####   "))
+  console.log(chalk.cyan("  ##     ##  ##   ##  ##   ##  ##   ## ##    ##       ##  ##  "))
+  console.log(chalk.cyan("  ##     ##  ##   ##  ##    ####    ##  ##   ######   ##  ##  "))
   console.log("");
   promptUser();
   }
@@ -55,6 +56,7 @@ const promptUser = () => {
           'View Employees by Manager',
           'Delete an Employee',
           'Update an Employee\'s Manager',
+          'Get Total Salary for a Department',
           'Exit'
           ]
       }
@@ -96,6 +98,9 @@ const promptUser = () => {
         }
         if (choices === 'Update an Employee\'s Manager') {
           updateEmployeeMgr();
+        }
+        if (choices === 'Get Total Salary for a Department') {
+          totalDeptSalary();
         }
         if (choices === 'Exit') {
             db.end();
@@ -148,9 +153,8 @@ function viewAllEmployees() {
       let sql = `INSERT INTO department (name) VALUES (?)`;
       db.query(sql, answer.addDepartment, (err, res) => {
         if (err) throw err;
-    // //   // Inform the client
     console.log('');
-    console.log('Added ' + answer.addDepartment + ' to departments!');
+    console.log(chalk.green('Added ' + answer.addDepartment + ' to departments!'));
     viewAllDepartments();
     });
   });
@@ -188,7 +192,7 @@ function viewAllEmployees() {
           (err, res) => {
               if (err) throw err;
           console.log('');
-          console.log('Added ' + response.title + ' to roles!');
+          console.log(chalk.green('Added ' + response.title + ' to roles!'));
           viewAllRoles();
           })
       })
@@ -238,7 +242,7 @@ function viewAllEmployees() {
           (err, response) => {
               if (err) throw err;
           console.log('');
-          console.log('Added ' + response.firstName + response.lastName + ' to employees!');
+          console.log(chalk.green('New employee added!'));
           viewAllEmployees();
           })
       })
@@ -281,7 +285,7 @@ function viewAllEmployees() {
           (err, res) => {
               if (err) throw err;
           console.log('');
-          console.log('Update Successful');
+          console.log(chalk.green('Update Successful'));
           viewAllEmployees();
           })
       })
@@ -357,7 +361,7 @@ function viewAllEmployees() {
           (err, res) => {
               if (err) throw err;
           console.log('');
-          console.log('Employee deleted successfully');
+          console.log(chalk.green('Employee deleted successfully'));
           viewAllEmployees();
           })
       })
@@ -397,8 +401,37 @@ function viewAllEmployees() {
           (err, res) => {
               if (err) throw err;
           console.log('');
-          console.log('Update Successful');
+          console.log(chalk.green('Update Successful'));
           viewAllEmployees();
+          })
+      })
+  })
+  };
+
+  //function to show total salary for entire department
+  function totalDeptSalary() {
+    db.query(`SELECT * FROM department;`, (err, res) => {
+      if (err) throw err;
+      let departments = res.map(department => ({name: department.name, value: department.id }));
+      inquirer.prompt([
+          {
+          name: 'department',
+          type: 'rawlist',
+          message: 'Which department would you get a total salary for?',
+          choices: departments   
+          },
+      ]).then((response) => {
+          // db.query(`SELECT department_id, department.name AS department_name, SUM(role.salary) AS total_salary FROM role JOIN department ON role.department_id = department.id WHERE ?`, 
+          db.query(`SELECT department.id, department.name AS department_name, SUM(role.salary) AS total_salary FROM employee AS employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id WHERE ?`, 
+          {
+              department_id: response.department,
+            },
+          (err, res) => {
+              if (err) throw err;
+          console.log('');
+          console.log(chalk.green(`The total of all salaries from the selected department:`));
+          console.table('\n', res, '\n');
+          promptUser();
           })
       })
   })
